@@ -49,7 +49,7 @@ const ManualAssignment = ({ orders, technicians, onAssignment }: ManualAssignmen
 
     setLoading(true);
     try {
-      await apiService.assignManually({
+      const assignedOrder = await apiService.assignManually({
         orderId: selectedOrder,
         technicianId: selectedTechnician,
       });
@@ -57,17 +57,25 @@ const ManualAssignment = ({ orders, technicians, onAssignment }: ManualAssignmen
       const order = orders.find(o => o.id === selectedOrder);
       const tech = technicians.find(t => t.id === selectedTechnician);
 
-      // Send notification
-      await apiService.sendNotification({
-        orderId: selectedOrder,
-        technicianId: selectedTechnician,
-        channels: ['email', 'sms'],
-      });
+      // Enviar notificación automática por email al técnico
+      try {
+        await apiService.sendNotification({
+          orderId: selectedOrder,
+          technicianId: selectedTechnician,
+          channels: ['email'],
+        });
 
-      toast({
-        title: "Asignación exitosa",
-        description: `Orden ${order?.id} asignada a ${tech?.name}. Notificación enviada.`,
-      });
+        toast({
+          title: "Asignación exitosa",
+          description: `Orden asignada a ${tech?.name}. Email enviado con detalles de la orden.`,
+        });
+      } catch (notificationError) {
+        toast({
+          title: "Asignación completada",
+          description: `Orden asignada a ${tech?.name}, pero no se pudo enviar el email.`,
+          variant: "destructive",
+        });
+      }
 
       setSelectedOrder("");
       setSelectedTechnician("");

@@ -31,10 +31,27 @@ const AutomaticAssignment = ({ orders, onAssignment }: AutomaticAssignmentProps)
     try {
       const result = await apiService.assignAutomatically(selectedOrder);
 
-      toast({
-        title: "Asignación automática exitosa",
-        description: `La orden ha sido asignada al técnico más adecuado según especialidad, carga y zona.`,
-      });
+      // Enviar notificación automática por email al técnico asignado
+      if (result.assignedTechnicianId) {
+        try {
+          await apiService.sendNotification({
+            orderId: selectedOrder,
+            technicianId: result.assignedTechnicianId,
+            channels: ['email'],
+          });
+
+          toast({
+            title: "Asignación automática exitosa",
+            description: `Orden asignada automáticamente. Email enviado al técnico con detalles.`,
+          });
+        } catch (notificationError) {
+          toast({
+            title: "Asignación completada",
+            description: `Orden asignada automáticamente, pero no se pudo enviar el email.`,
+            variant: "destructive",
+          });
+        }
+      }
 
       setSelectedOrder("");
       setRecommendedTech(null);

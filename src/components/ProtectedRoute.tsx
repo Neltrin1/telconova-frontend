@@ -20,6 +20,12 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
 
     const user = JSON.parse(userData);
 
+    // Bloquear acceso de técnicos al módulo de asignación
+    if (user.role === 'technician') {
+      navigate('/technician-dashboard');
+      return;
+    }
+
     if (requiredRole && user.role !== requiredRole) {
       navigate('/dashboard');
       return;
