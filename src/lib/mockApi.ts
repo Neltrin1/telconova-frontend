@@ -8,7 +8,9 @@ import {
   WorkOrder,
   AssignmentRequest,
   NotificationData,
-  TechnicianRegistration
+  TechnicianRegistration,
+  SavedReport,
+  SaveReportRequest
 } from './api';
 import { 
   mockUsers, 
@@ -23,6 +25,39 @@ class MockApiService {
   private workOrders: WorkOrder[] = [...mockWorkOrders];
   private failedAttempts: Map<string, number> = new Map();
   private blockedUsers: Map<string, number> = new Map();
+  private savedReports: SavedReport[] = [
+    {
+      reportId: 'report-001',
+      reportName: 'Reporte Demo Diciembre 2024',
+      filters: {
+        startDate: '2024-12-01',
+        endDate: '2024-12-31',
+        serviceType: 'all',
+        zone: 'all',
+      },
+      metrics: [
+        {
+          technicianId: 'tech-1',
+          technicianName: 'Juan Pérez',
+          zone: 'Norte',
+          specialty: 'Electricidad',
+          totalOrders: 15,
+          completedOrders: 12,
+          inProgressOrders: 3,
+          avgResolutionTime: 2.5,
+        },
+      ],
+      summary: {
+        totalOrders: 15,
+        totalCompleted: 12,
+        totalInProgress: 3,
+        avgResolutionTime: 2.5,
+      },
+      createdAt: '2024-12-31T10:00:00Z',
+      createdBy: 'admin',
+      createdByName: 'Administrador',
+    },
+  ];
 
   constructor() {
     this.token = localStorage.getItem('auth_token');
@@ -296,6 +331,75 @@ class MockApiService {
     return {
       message: 'Técnico registrado exitosamente'
     };
+  }
+
+  // Reports endpoints
+  async saveReport(data: SaveReportRequest): Promise<SavedReport> {
+    await simulateDelay(500);
+    
+    const newReport: SavedReport = {
+      reportId: `report-${Date.now()}`,
+      ...data,
+      createdAt: new Date().toISOString(),
+      createdBy: 'admin',
+      createdByName: 'Administrador',
+    };
+    
+    this.savedReports.unshift(newReport);
+    return newReport;
+  }
+
+  async getReportHistory(
+    page: number,
+    limit: number,
+    sortBy: string,
+    sortOrder: 'asc' | 'desc'
+  ): Promise<{ reports: SavedReport[]; pagination: any }> {
+    await simulateDelay(300);
+    
+    const sorted = [...this.savedReports].sort((a, b) => {
+      const aVal = a[sortBy as keyof SavedReport];
+      const bVal = b[sortBy as keyof SavedReport];
+      return sortOrder === 'asc' 
+        ? aVal > bVal ? 1 : -1
+        : aVal < bVal ? 1 : -1;
+    });
+    
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    const paginatedReports = sorted.slice(start, end);
+    
+    return {
+      reports: paginatedReports,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(this.savedReports.length / limit),
+        totalReports: this.savedReports.length,
+        limit,
+      },
+    };
+  }
+
+  async getReportDetail(reportId: string): Promise<SavedReport> {
+    await simulateDelay(300);
+    
+    const report = this.savedReports.find(r => r.reportId === reportId);
+    if (!report) {
+      throw new Error('Reporte no encontrado');
+    }
+    
+    return report;
+  }
+
+  async deleteReport(reportId: string): Promise<void> {
+    await simulateDelay(300);
+    
+    const index = this.savedReports.findIndex(r => r.reportId === reportId);
+    if (index === -1) {
+      throw new Error('Reporte no encontrado');
+    }
+    
+    this.savedReports.splice(index, 1);
   }
 }
 

@@ -83,6 +83,44 @@ export interface TechnicianRegistration {
   specialtyTecnico: string;
 }
 
+// Report interfaces
+export interface SavedReport {
+  reportId: string;
+  reportName: string;
+  filters: {
+    startDate: string;
+    endDate: string;
+    serviceType: string;
+    zone: string;
+  };
+  metrics: Array<{
+    technicianId: string;
+    technicianName: string;
+    zone: string;
+    specialty: string;
+    totalOrders: number;
+    completedOrders: number;
+    inProgressOrders: number;
+    avgResolutionTime: number;
+  }>;
+  summary: {
+    totalOrders: number;
+    totalCompleted: number;
+    totalInProgress: number;
+    avgResolutionTime: number;
+  };
+  createdAt: string;
+  createdBy: string;
+  createdByName?: string;
+}
+
+export interface SaveReportRequest {
+  reportName: string;
+  filters: SavedReport['filters'];
+  metrics: SavedReport['metrics'];
+  summary: SavedReport['summary'];
+}
+
 class ApiService {
   private token: string | null = null;
 
@@ -292,6 +330,56 @@ class ApiService {
     return {
       message: response
     };
+  }
+
+  // Reports endpoints
+  async saveReport(data: SaveReportRequest): Promise<SavedReport> {
+    if (USE_MOCK_API) {
+      return mockApiService.saveReport(data);
+    }
+    
+    const response = await this.request<{ data: SavedReport }>('/reports/save', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    
+    return response.data;
+  }
+
+  async getReportHistory(
+    page = 1, 
+    limit = 10,
+    sortBy = 'createdAt',
+    sortOrder: 'asc' | 'desc' = 'desc'
+  ): Promise<{ reports: SavedReport[]; pagination: any }> {
+    if (USE_MOCK_API) {
+      return mockApiService.getReportHistory(page, limit, sortBy, sortOrder);
+    }
+    
+    const response = await this.request<{ data: { reports: SavedReport[]; pagination: any } }>(
+      `/reports/history?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`
+    );
+    
+    return response.data;
+  }
+
+  async getReportDetail(reportId: string): Promise<SavedReport> {
+    if (USE_MOCK_API) {
+      return mockApiService.getReportDetail(reportId);
+    }
+    
+    const response = await this.request<{ data: SavedReport }>(`/reports/history/${reportId}`);
+    return response.data;
+  }
+
+  async deleteReport(reportId: string): Promise<void> {
+    if (USE_MOCK_API) {
+      return mockApiService.deleteReport(reportId);
+    }
+    
+    await this.request(`/reports/history/${reportId}`, {
+      method: 'DELETE',
+    });
   }
 }
 
