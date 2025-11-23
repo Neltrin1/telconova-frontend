@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { apiService, Technician, WorkOrder } from "@/lib/api";
+import { apiService, Technician, WorkOrder, SavedReport } from "@/lib/api";
 import { 
   ArrowLeft, 
   Download, 
@@ -17,7 +19,11 @@ import {
   TrendingUp,
   Clock,
   MapPin,
-  Award
+  Award,
+  Save,
+  History,
+  Trash2,
+  Eye
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -66,9 +72,15 @@ const ReportsPanel = () => {
     serviceType: 'all',
     zone: 'all',
   });
+  const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
+  const [reportName, setReportName] = useState('');
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<SavedReport | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
 
   useEffect(() => {
     loadData();
+    loadReportHistory();
   }, []);
 
   useEffect(() => {
@@ -135,8 +147,91 @@ const ReportsPanel = () => {
     setMetrics(techMetrics);
   };
 
+  const loadReportHistory = async () => {
+    try {
+      const { reports } = await apiService.getReportHistory(1, 100);
+      setSavedReports(reports);
+    } catch (error) {
+      console.error('Error loading report history:', error);
+    }
+  };
+
+  const handleSaveReport = async () => {
+    if (!reportName.trim()) {
+      toast({
+        title: "Error",
+        description: "Por favor ingrese un nombre para el reporte",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const summary = {
+        totalOrders: metrics.reduce((sum, m) => sum + m.totalOrders, 0),
+        totalCompleted: metrics.reduce((sum, m) => sum + m.completedOrders, 0),
+        totalInProgress: metrics.reduce((sum, m) => sum + m.inProgressOrders, 0),
+        avgResolutionTime: metrics.length > 0 
+          ? parseFloat((metrics.reduce((sum, m) => sum + m.avgResolutionTime, 0) / metrics.length).toFixed(1))
+          : 0,
+      };
+
+      await apiService.saveReport({
+        reportName,
+        filters,
+        metrics,
+        summary,
+      });
+
+      toast({
+        title: "Reporte guardado",
+        description: "El reporte ha sido guardado exitosamente",
+      });
+
+      setReportName('');
+      setSaveDialogOpen(false);
+      loadReportHistory();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el reporte",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewReport = async (reportId: string) => {
+    try {
+      const report = await apiService.getReportDetail(reportId);
+      setSelectedReport(report);
+      setViewDialogOpen(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo cargar el reporte",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteReport = async (reportId: string) => {
+    try {
+      await apiService.deleteReport(reportId);
+      toast({
+        title: "Reporte eliminado",
+        description: "El reporte ha sido eliminado exitosamente",
+      });
+      loadReportHistory();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el reporte",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleExportExcel = () => {
-    // Crear CSV simple
     const headers = ['Técnico', 'Zona', 'Especialidad', 'Órdenes Totales', 'Completadas', 'En Progreso', 'Tiempo Promedio (días)'];
     const rows = metrics.map(m => [
       m.technicianName,
@@ -204,6 +299,19 @@ const ReportsPanel = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-6">
+        <Tabs defaultValue="current" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="current">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Reporte Actual
+            </TabsTrigger>
+            <TabsTrigger value="history">
+              <History className="h-4 w-4 mr-2" />
+              Historial
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="current" className="space-y-6 mt-6">
         {/* Filtros */}
         <Card className="shadow-soft">
           <CardHeader>
@@ -272,11 +380,46 @@ const ReportsPanel = () => {
               </div>
             </div>
 
-            <div className="mt-4">
-              <Button onClick={handleExportExcel} className="w-full md:w-auto">
+            <div className="mt-4 flex gap-2 flex-wrap">
+              <Button onClick={handleExportExcel} variant="outline" className="flex-1 md:flex-none">
                 <Download className="h-4 w-4 mr-2" />
-                Exportar a Excel (CSV)
+                Exportar CSV
               </Button>
+              <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="flex-1 md:flex-none">
+                    <Save className="h-4 w-4 mr-2" />
+                    Guardar Reporte
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Guardar Reporte</DialogTitle>
+                    <DialogDescription>
+                      Ingrese un nombre para identificar este reporte en el historial
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="reportName">Nombre del Reporte</Label>
+                      <Input
+                        id="reportName"
+                        placeholder="Ej: Reporte Mensual Enero 2024"
+                        value={reportName}
+                        onChange={(e) => setReportName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleSaveReport}>
+                      Guardar
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardContent>
         </Card>
@@ -457,6 +600,202 @@ const ReportsPanel = () => {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-6 mt-6">
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="h-5 w-5" />
+                  Reportes Guardados
+                </CardTitle>
+                <CardDescription>
+                  Consulta y descarga reportes generados anteriormente
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nombre del Reporte</TableHead>
+                        <TableHead>Periodo</TableHead>
+                        <TableHead className="text-center">Total Órdenes</TableHead>
+                        <TableHead className="text-center">Completadas</TableHead>
+                        <TableHead>Fecha Creación</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {savedReports.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                            No hay reportes guardados
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        savedReports.map((report) => (
+                          <TableRow key={report.reportId}>
+                            <TableCell className="font-medium">{report.reportName}</TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                {new Date(report.filters.startDate).toLocaleDateString()} - {new Date(report.filters.endDate).toLocaleDateString()}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center font-semibold">
+                              {report.summary.totalOrders}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-success font-medium">
+                                {report.summary.totalCompleted}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                {new Date(report.createdAt).toLocaleDateString()}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {report.createdByName}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleViewReport(report.reportId)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteReport(report.reportId)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Dialog para ver detalle de reporte */}
+        <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedReport?.reportName}</DialogTitle>
+              <DialogDescription>
+                Detalle del reporte generado el {selectedReport && new Date(selectedReport.createdAt).toLocaleString()}
+              </DialogDescription>
+            </DialogHeader>
+            {selectedReport && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Total Órdenes
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-primary">
+                        {selectedReport.summary.totalOrders}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Completadas
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-success">
+                        {selectedReport.summary.totalCompleted}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        En Progreso
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-warning">
+                        {selectedReport.summary.totalInProgress}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Tiempo Prom.
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-accent">
+                        {selectedReport.summary.avgResolutionTime} días
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Técnico</TableHead>
+                        <TableHead>Zona</TableHead>
+                        <TableHead>Especialidad</TableHead>
+                        <TableHead className="text-center">Total</TableHead>
+                        <TableHead className="text-center">Completadas</TableHead>
+                        <TableHead className="text-center">En Progreso</TableHead>
+                        <TableHead className="text-center">Tiempo Prom.</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedReport.metrics.map((metric) => (
+                        <TableRow key={metric.technicianId}>
+                          <TableCell className="font-medium">{metric.technicianName}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{metric.zone}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{metric.specialty}</Badge>
+                          </TableCell>
+                          <TableCell className="text-center font-semibold">{metric.totalOrders}</TableCell>
+                          <TableCell className="text-center">
+                            <span className="text-success font-medium">{metric.completedOrders}</span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="text-warning font-medium">{metric.inProgressOrders}</span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {metric.avgResolutionTime} días
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
+                Cerrar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
