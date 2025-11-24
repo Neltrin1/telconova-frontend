@@ -10,10 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { apiService, Technician, WorkOrder, SavedReport } from "@/lib/api";
-import { 
-  ArrowLeft, 
-  Download, 
-  BarChart3, 
+import {
+  ArrowLeft,
+  Download,
+  BarChart3,
   Calendar,
   Filter,
   TrendingUp,
@@ -26,14 +26,14 @@ import {
   Eye
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -111,22 +111,22 @@ const ReportsPanel = () => {
 
   const calculateMetrics = () => {
     const filteredOrders = workOrders.filter(order => {
-      const orderDate = new Date(order.createdAt);
+      const orderDate = new Date(order.creadoEn);
       const startDate = new Date(filters.startDate);
       const endDate = new Date(filters.endDate);
-      
+
       const matchesDate = orderDate >= startDate && orderDate <= endDate;
-      const matchesServiceType = filters.serviceType === 'all' || order.specialty === filters.serviceType;
-      const matchesZone = filters.zone === 'all' || order.zone === filters.zone;
-      
-      return matchesDate && matchesServiceType && matchesZone && order.assignedTechnicianId;
+      const matchesServiceType = filters.serviceType === 'all' || order.servicio === filters.serviceType;
+      const matchesZone = filters.zone === 'all' || order.zona === filters.zone;
+
+      return matchesDate && matchesServiceType && matchesZone && order.assignedTo;
     });
 
     const techMetrics = technicians.map(tech => {
-      const techOrders = filteredOrders.filter(o => o.assignedTechnicianId === tech.id);
+      const techOrders = filteredOrders.filter(o => o.assignedTo === tech.id);
       const completedOrders = techOrders.filter(o => o.status === 'completed');
       const inProgressOrders = techOrders.filter(o => o.status === 'in_progress');
-      
+
       // Calcular tiempo promedio de resolución (simulado en días)
       const avgResolutionTime = completedOrders.length > 0
         ? Math.floor(Math.random() * 5) + 1 // Simulación temporal
@@ -171,16 +171,16 @@ const ReportsPanel = () => {
         totalOrders: metrics.reduce((sum, m) => sum + m.totalOrders, 0),
         totalCompleted: metrics.reduce((sum, m) => sum + m.completedOrders, 0),
         totalInProgress: metrics.reduce((sum, m) => sum + m.inProgressOrders, 0),
-        avgResolutionTime: metrics.length > 0 
+        avgResolutionTime: metrics.length > 0
           ? parseFloat((metrics.reduce((sum, m) => sum + m.avgResolutionTime, 0) / metrics.length).toFixed(1))
           : 0,
       };
 
       await apiService.saveReport({
-        reportName,
-        filters,
-        metrics,
-        summary,
+        nombreReporte: reportName,
+        filtros: filters,
+        metricas: metrics,
+        resumen: summary,
       });
 
       toast({
@@ -251,7 +251,7 @@ const ReportsPanel = () => {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    
+
     link.setAttribute('href', url);
     link.setAttribute('download', `reporte_tecnicos_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
@@ -287,9 +287,9 @@ const ReportsPanel = () => {
             <h1 className="text-2xl font-bold text-primary">Panel de Reportes</h1>
             <p className="text-sm text-muted-foreground">Análisis y métricas de rendimiento</p>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => navigate('/dashboard')}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -312,294 +312,294 @@ const ReportsPanel = () => {
           </TabsList>
 
           <TabsContent value="current" className="space-y-6 mt-6">
-        {/* Filtros */}
-        <Card className="shadow-soft">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filtros de Reporte
-            </CardTitle>
-            <CardDescription>Personaliza el periodo y criterios del reporte</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startDate">
-                  <Calendar className="h-4 w-4 inline mr-1" />
-                  Fecha Inicio
-                </Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={filters.startDate}
-                  onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="endDate">
-                  <Calendar className="h-4 w-4 inline mr-1" />
-                  Fecha Fin
-                </Label>
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={filters.endDate}
-                  onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="serviceType">Tipo de Servicio</Label>
-                <Select value={filters.serviceType} onValueChange={(v) => setFilters({ ...filters, serviceType: v })}>
-                  <SelectTrigger id="serviceType">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {specialties.map(spec => (
-                      <SelectItem key={spec} value={spec}>{spec}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="zone">Zona</Label>
-                <Select value={filters.zone} onValueChange={(v) => setFilters({ ...filters, zone: v })}>
-                  <SelectTrigger id="zone">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas</SelectItem>
-                    {zones.map(zone => (
-                      <SelectItem key={zone} value={zone}>{zone}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="mt-4 flex gap-2 flex-wrap">
-              <Button onClick={handleExportExcel} variant="outline" className="flex-1 md:flex-none">
-                <Download className="h-4 w-4 mr-2" />
-                Exportar CSV
-              </Button>
-              <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="flex-1 md:flex-none">
-                    <Save className="h-4 w-4 mr-2" />
-                    Guardar Reporte
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Guardar Reporte</DialogTitle>
-                    <DialogDescription>
-                      Ingrese un nombre para identificar este reporte en el historial
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="reportName">Nombre del Reporte</Label>
-                      <Input
-                        id="reportName"
-                        placeholder="Ej: Reporte Mensual Enero 2024"
-                        value={reportName}
-                        onChange={(e) => setReportName(e.target.value)}
-                      />
-                    </div>
+            {/* Filtros */}
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Filter className="h-5 w-5" />
+                  Filtros de Reporte
+                </CardTitle>
+                <CardDescription>Personaliza el periodo y criterios del reporte</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate">
+                      <Calendar className="h-4 w-4 inline mr-1" />
+                      Fecha Inicio
+                    </Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={filters.startDate}
+                      onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+                    />
                   </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button onClick={handleSaveReport}>
-                      Guardar
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="endDate">
+                      <Calendar className="h-4 w-4 inline mr-1" />
+                      Fecha Fin
+                    </Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={filters.endDate}
+                      onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="serviceType">Tipo de Servicio</Label>
+                    <Select value={filters.serviceType} onValueChange={(v) => setFilters({ ...filters, serviceType: v })}>
+                      <SelectTrigger id="serviceType">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        {specialties.map(spec => (
+                          <SelectItem key={spec} value={spec}>{spec}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="zone">Zona</Label>
+                    <Select value={filters.zone} onValueChange={(v) => setFilters({ ...filters, zone: v })}>
+                      <SelectTrigger id="zone">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        {zones.map(zone => (
+                          <SelectItem key={zone} value={zone}>{zone}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex gap-2 flex-wrap">
+                  <Button onClick={handleExportExcel} variant="outline" className="flex-1 md:flex-none">
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar CSV
+                  </Button>
+                  <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="flex-1 md:flex-none">
+                        <Save className="h-4 w-4 mr-2" />
+                        Guardar Reporte
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Guardar Reporte</DialogTitle>
+                        <DialogDescription>
+                          Ingrese un nombre para identificar este reporte en el historial
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="reportName">Nombre del Reporte</Label>
+                          <Input
+                            id="reportName"
+                            placeholder="Ej: Reporte Mensual Enero 2024"
+                            value={reportName}
+                            onChange={(e) => setReportName(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+                          Cancelar
+                        </Button>
+                        <Button onClick={handleSaveReport}>
+                          Guardar
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Resumen de Métricas */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="shadow-soft">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Total Órdenes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-primary">
+                    {metrics.reduce((sum, m) => sum + m.totalOrders, 0)}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-soft">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Completadas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-success">
+                    {metrics.reduce((sum, m) => sum + m.completedOrders, 0)}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-soft">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    En Progreso
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-warning">
+                    {metrics.reduce((sum, m) => sum + m.inProgressOrders, 0)}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-soft">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Tiempo Prom. (días)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-accent">
+                    {metrics.length > 0
+                      ? (metrics.reduce((sum, m) => sum + m.avgResolutionTime, 0) / metrics.length).toFixed(1)
+                      : 0
+                    }
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Resumen de Métricas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="shadow-soft">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Órdenes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">
-                {metrics.reduce((sum, m) => sum + m.totalOrders, 0)}
-              </div>
-            </CardContent>
-          </Card>
+            {/* Gráficos */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="shadow-soft">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Órdenes por Técnico
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={ordersByTechChart}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="ordenes" fill="hsl(var(--primary))" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
 
-          <Card className="shadow-soft">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Completadas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-success">
-                {metrics.reduce((sum, m) => sum + m.completedOrders, 0)}
-              </div>
-            </CardContent>
-          </Card>
+              <Card className="shadow-soft">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Distribución por Zona
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={ordersByZoneChart}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="hsl(var(--primary))"
+                        dataKey="value"
+                      >
+                        {ordersByZoneChart.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
 
-          <Card className="shadow-soft">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                En Progreso
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-warning">
-                {metrics.reduce((sum, m) => sum + m.inProgressOrders, 0)}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-soft">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Tiempo Prom. (días)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-accent">
-                {metrics.length > 0 
-                  ? (metrics.reduce((sum, m) => sum + m.avgResolutionTime, 0) / metrics.length).toFixed(1)
-                  : 0
-                }
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Gráficos */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Órdenes por Técnico
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={ordersByTechChart}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="ordenes" fill="hsl(var(--primary))" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Distribución por Zona
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={ordersByZoneChart}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="hsl(var(--primary))"
-                    dataKey="value"
-                  >
-                    {ordersByZoneChart.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tabla de Métricas Detalladas */}
-        <Card className="shadow-soft">
-          <CardHeader>
-            <CardTitle>Métricas Detalladas por Técnico</CardTitle>
-            <CardDescription>Desempeño individual de cada técnico</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Técnico</TableHead>
-                    <TableHead>
-                      <MapPin className="h-4 w-4 inline mr-1" />
-                      Zona
-                    </TableHead>
-                    <TableHead>
-                      <Award className="h-4 w-4 inline mr-1" />
-                      Especialidad
-                    </TableHead>
-                    <TableHead className="text-center">Total Órdenes</TableHead>
-                    <TableHead className="text-center">Completadas</TableHead>
-                    <TableHead className="text-center">En Progreso</TableHead>
-                    <TableHead className="text-center">
-                      <Clock className="h-4 w-4 inline mr-1" />
-                      Tiempo Prom.
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {metrics.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                        No hay datos para el periodo seleccionado
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    metrics.map((metric) => (
-                      <TableRow key={metric.technicianId}>
-                        <TableCell className="font-medium">{metric.technicianName}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{metric.zone}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{metric.specialty}</Badge>
-                        </TableCell>
-                        <TableCell className="text-center font-semibold">{metric.totalOrders}</TableCell>
-                        <TableCell className="text-center">
-                          <span className="text-success font-medium">{metric.completedOrders}</span>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span className="text-warning font-medium">{metric.inProgressOrders}</span>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {metric.avgResolutionTime} días
-                        </TableCell>
+            {/* Tabla de Métricas Detalladas */}
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle>Métricas Detalladas por Técnico</CardTitle>
+                <CardDescription>Desempeño individual de cada técnico</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Técnico</TableHead>
+                        <TableHead>
+                          <MapPin className="h-4 w-4 inline mr-1" />
+                          Zona
+                        </TableHead>
+                        <TableHead>
+                          <Award className="h-4 w-4 inline mr-1" />
+                          Especialidad
+                        </TableHead>
+                        <TableHead className="text-center">Total Órdenes</TableHead>
+                        <TableHead className="text-center">Completadas</TableHead>
+                        <TableHead className="text-center">En Progreso</TableHead>
+                        <TableHead className="text-center">
+                          <Clock className="h-4 w-4 inline mr-1" />
+                          Tiempo Prom.
+                        </TableHead>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {metrics.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                            No hay datos para el periodo seleccionado
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        metrics.map((metric) => (
+                          <TableRow key={metric.technicianId}>
+                            <TableCell className="font-medium">{metric.technicianName}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{metric.zone}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{metric.specialty}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center font-semibold">{metric.totalOrders}</TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-success font-medium">{metric.completedOrders}</span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-warning font-medium">{metric.inProgressOrders}</span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {metric.avgResolutionTime} días
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="history" className="space-y-6 mt-6">
@@ -635,27 +635,27 @@ const ReportsPanel = () => {
                         </TableRow>
                       ) : (
                         savedReports.map((report) => (
-                          <TableRow key={report.reportId}>
-                            <TableCell className="font-medium">{report.reportName}</TableCell>
+                          <TableRow key={report.idReporte}>
+                            <TableCell className="font-medium">{report.nombreReporte}</TableCell>
                             <TableCell>
                               <div className="text-sm">
-                                {new Date(report.filters.startDate).toLocaleDateString()} - {new Date(report.filters.endDate).toLocaleDateString()}
+                                {new Date(report.filtros.startDate).toLocaleDateString()} - {new Date(report.filtros.endDate).toLocaleDateString()}
                               </div>
                             </TableCell>
                             <TableCell className="text-center font-semibold">
-                              {report.summary.totalOrders}
+                              {report.resumen.totalOrders}
                             </TableCell>
                             <TableCell className="text-center">
                               <span className="text-success font-medium">
-                                {report.summary.totalCompleted}
+                                {report.resumen.totalCompleted}
                               </span>
                             </TableCell>
                             <TableCell>
                               <div className="text-sm">
-                                {new Date(report.createdAt).toLocaleDateString()}
+                                {new Date(report.creadoEn).toLocaleDateString()}
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                {report.createdByName}
+                                {report.creadoPor}
                               </div>
                             </TableCell>
                             <TableCell className="text-right">
@@ -663,14 +663,14 @@ const ReportsPanel = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleViewReport(report.reportId)}
+                                  onClick={() => handleViewReport(report.idReporte)}
                                 >
                                   <Eye className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleDeleteReport(report.reportId)}
+                                  onClick={() => handleDeleteReport(report.idReporte)}
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
@@ -691,9 +691,9 @@ const ReportsPanel = () => {
         <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{selectedReport?.reportName}</DialogTitle>
+              <DialogTitle>{selectedReport?.nombreReporte}</DialogTitle>
               <DialogDescription>
-                Detalle del reporte generado el {selectedReport && new Date(selectedReport.createdAt).toLocaleString()}
+                Detalle del reporte generado el {selectedReport && new Date(selectedReport.creadoEn).toLocaleString()}
               </DialogDescription>
             </DialogHeader>
             {selectedReport && (
@@ -707,7 +707,7 @@ const ReportsPanel = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-primary">
-                        {selectedReport.summary.totalOrders}
+                        {selectedReport.resumen.totalOrders}
                       </div>
                     </CardContent>
                   </Card>
@@ -719,7 +719,7 @@ const ReportsPanel = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-success">
-                        {selectedReport.summary.totalCompleted}
+                        {selectedReport.resumen.totalCompleted}
                       </div>
                     </CardContent>
                   </Card>
@@ -731,7 +731,7 @@ const ReportsPanel = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-warning">
-                        {selectedReport.summary.totalInProgress}
+                        {selectedReport.resumen.totalInProgress}
                       </div>
                     </CardContent>
                   </Card>
@@ -743,7 +743,7 @@ const ReportsPanel = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-accent">
-                        {selectedReport.summary.avgResolutionTime} días
+                        {selectedReport.resumen.avgResolutionTime} días
                       </div>
                     </CardContent>
                   </Card>
@@ -763,7 +763,7 @@ const ReportsPanel = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {selectedReport.metrics.map((metric) => (
+                      {selectedReport.metricas.map((metric) => (
                         <TableRow key={metric.technicianId}>
                           <TableCell className="font-medium">{metric.technicianName}</TableCell>
                           <TableCell>

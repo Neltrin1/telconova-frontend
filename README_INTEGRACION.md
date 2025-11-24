@@ -1,349 +1,356 @@
 # Guía de Integración Frontend-Backend
 
-## TelcoNova - Sistema de Asignación de Técnicos
+## TelcoNova - Sistema de Gestión de Órdenes de Trabajo
 
-Este frontend está integrado con el backend de Spring Boot proporcionado.
+Frontend React + TypeScript integrado completamente con el backend Spring Boot.
 
 ---
 
 ## 🚀 Inicio Rápido
 
-### Opción 1: Usar Mock API (Desarrollo sin Backend)
+### Conectar con Backend
 
-1. Asegúrate que el archivo `.env` tenga:
-```bash
-VITE_USE_MOCK_API=true
-```
+1. **Inicia el backend** de Spring Boot en `http://localhost:8080`
 
-2. Ejecuta el frontend:
-```bash
-npm install
-npm run dev
-```
-
-3. Accede a `http://localhost:5173`
-
-4. Usa las credenciales de prueba:
-   - **Email**: `supervisor_test@telconova.com`
-   - **Password**: `password123`
-
-### Opción 2: Conectar con Backend Real
-
-1. Inicia el backend de Spring Boot en `http://localhost:8080`
-
-2. Configura el archivo `.env`:
+2. **Configura el archivo `.env`:**
 ```bash
 VITE_API_URL=http://localhost:8080/api
 VITE_USE_MOCK_API=false
 ```
 
-3. Ejecuta el frontend:
+3. **Ejecuta el frontend:**
 ```bash
 npm install
 npm run dev
 ```
 
-4. Usa las credenciales del backend (según `schema.sql`):
+4. **Accede a la aplicación:**
+   - URL: `http://localhost:8081` (o el puerto que Vite asigne)
    - **Email**: `test@example.com`
    - **Password**: `secret`
 
 ---
 
-## 📋 Endpoints del Backend Implementados
+## ✅ Estado de la Integración
 
-El frontend está integrado con los siguientes endpoints de Spring Boot:
+### Completamente Implementado
 
-### 1. Autenticación
+#### Autenticación ✅
+- Login con JWT
+- Token almacenado en localStorage
+- Token enviado en header Authorization
+- Logout funcional
 
-#### POST `/api/auth/login`
-**Request:**
-```json
-{
-  "email": "test@example.com",
-  "password": "secret"
-}
-```
+#### Gestión de Técnicos ✅
+- Listado de técnicos
+- Visualización de carga de trabajo
+- Filtrado por zona y especialidad
+- Registro de nuevos técnicos
 
-**Response:**
-```json
-"Login successful"
-```
+#### Gestión de Órdenes ✅
+- Listado de órdenes de trabajo
+- Filtrado por estado y zona
+- Visualización de detalles completos
+- Todos los campos en español
 
-**Notas:**
-- El backend retorna un string, no un objeto JSON con token
-- El frontend simula un token para mantener la sesión
+#### Asignaciones ✅
+- **Asignación Manual**: Seleccionar técnico específico
+- **Asignación Automática**: Algoritmo inteligente del backend
+- Notificaciones automáticas por email
+- Actualización de workload
 
-#### POST `/api/auth/register`
-**Request:**
-```json
-{
-  "email": "nuevo@ejemplo.com",
-  "password": "contraseña",
-  "name": "Nombre Completo",
-  "role": "supervisor"
-}
-```
-
-**Response:**
-```json
-"User registered"
-```
-
-### 2. Técnicos
-
-#### GET `/api/technicians/all`
-**Response:**
-```json
-[
-  {
-    "idTecnico": 1,
-    "nameTecnico": "Juan Perez",
-    "zoneTecnico": "Zona Oriente",
-    "workloadTecnico": "4",
-    "specialtyTecnico": "Electricidad"
-  }
-]
-```
-
-**Notas:**
-- El frontend transforma automáticamente la respuesta del backend al formato esperado
-- Mapea campos del backend (`idTecnico`, `nameTecnico`, etc.) a campos del frontend (`id`, `name`, etc.)
-
-#### POST `/api/technicians/create`
-**Request:**
-```json
-{
-  "nameTecnico": "Nuevo Técnico",
-  "zoneTecnico": "Norte",
-  "workloadTecnico": "0",
-  "specialtyTecnico": "Fibra Óptica"
-}
-```
-
-**Response:**
-```json
-"Technician created"
-```
+#### Reportes ✅
+- Generación de métricas por técnico
+- Filtros por fecha, servicio y zona
+- Guardado de reportes
+- Historial con paginación
+- Exportación a CSV
+- Visualización con gráficos
 
 ---
 
-## 🔄 Transformación de Datos
+## 📊 Estructura de Datos
 
-El frontend realiza transformaciones automáticas entre el formato del backend y el formato interno:
+### Todos los campos usan nombres en ESPAÑOL
 
-### Backend → Frontend
-
-| Backend | Frontend | Descripción |
-|---------|----------|-------------|
-| `idTecnico` | `id` | ID numérico → string |
-| `nameTecnico` | `name` | Nombre del técnico |
-| `zoneTecnico` | `zone` | Zona de trabajo |
-| `specialtyTecnico` | `specialty` | Especialidad |
-| `workloadTecnico` | `currentLoad` | Carga (string → number) |
-
-### Cálculo de Disponibilidad
-
-El frontend calcula la disponibilidad basándose en la carga de trabajo:
-- `workloadTecnico > 5` → `availability: 'busy'`
-- `workloadTecnico ≤ 5` → `availability: 'available'`
-
----
-
-## ⚠️ Funcionalidades Limitadas
-
-Las siguientes funcionalidades del frontend **NO** están disponibles en el backend actual:
-
-### ❌ No Implementadas en Backend
-
-1. **Órdenes de Trabajo**
-   - `GET /api/work-orders`
-   - `GET /api/work-orders/:id`
-   - Solución: Usar `VITE_USE_MOCK_API=true` para desarrollo
-
-2. **Asignaciones**
-   - `POST /api/assignments/manual`
-   - `POST /api/assignments/automatic`
-   - Solución: Usar `VITE_USE_MOCK_API=true` para desarrollo
-
-3. **Notificaciones**
-   - `POST /api/notifications/send`
-   - Solución: Usar `VITE_USE_MOCK_API=true` para desarrollo
-
-### 🔧 Modo Híbrido (Recomendado para Desarrollo)
-
-Puedes modificar `src/lib/api.ts` para usar mock solo para endpoints faltantes:
-
+#### WorkOrder (Orden de Trabajo)
 ```typescript
-// Ejemplo: Usar backend real solo para autenticación y técnicos
-async getTechnicians() {
-  if (USE_MOCK_API) {
-    return mockApiService.getTechnicians();
-  }
-  return this.request('/technicians/all'); // Backend real
+interface WorkOrder {
+  id: string;
+  zona: string;
+  servicio: string;
+  descripcion: string;
+  nombreCliente: string;
+  direccion: string;
+  prioridad: string;  // 'low' | 'medium' | 'high'
+  status: string;     // 'pending' | 'assigned' | 'in_progress' | 'completed'
+  assignedTo: string | null;
+  asignadoEn: string | null;
+  asignadoPor: string | null;
+  creadoEn: string;
 }
+```
 
-async getWorkOrders() {
-  // Siempre usa mock porque no existe en backend
-  return mockApiService.getWorkOrders();
+#### Technician (Técnico)
+```typescript
+interface Technician {
+  id: string;
+  idTecnico: string;
+  name: string;
+  nameTecnico: string;
+  zone: string;
+  zoneTecnico: string;
+  specialty: string;
+  specialtyTecnico: string;
+  currentLoad: number;
+  workloadTecnico: string;
+  availability: 'available' | 'busy' | 'offline';
+  email: string;
+  phone: string;
+}
+```
+
+#### SavedReport (Reporte Guardado)
+```typescript
+interface SavedReport {
+  idReporte: string;
+  nombreReporte: string;
+  filtros: {
+    startDate: string;
+    endDate: string;
+    serviceType: string;
+    zone: string;
+  };
+  metricas: Array<{
+    technicianId: string;
+    technicianName: string;
+    zone: string;
+    specialty: string;
+    totalOrders: number;
+    completedOrders: number;
+    inProgressOrders: number;
+    avgResolutionTime: number;
+  }>;
+  resumen: {
+    totalOrders: number;
+    totalCompleted: number;
+    totalInProgress: number;
+    avgResolutionTime: number;
+  };
+  creadoEn: string;
+  creadoPor: string;
+}
+```
+
+#### AssignmentRequest (Solicitud de Asignación)
+```typescript
+interface AssignmentRequest {
+  idOrden: string;
+  idTecnico: string;
+  automatico?: boolean;
+}
+```
+
+#### NotificationData (Datos de Notificación)
+```typescript
+interface NotificationData {
+  idOrden: string;
+  idTecnico: string;
+  canales: string[];  // ['email', 'sms']
 }
 ```
 
 ---
 
-## 📊 Estructura del Backend
+## 🔌 Endpoints Utilizados
 
-### Base de Datos H2 (En Memoria)
+### Autenticación
+- `POST /api/auth/login` - Login con email/password
+- `POST /api/auth/register` - Registro de usuario
 
-El backend usa H2 Database con las siguientes tablas:
+### Técnicos
+- `GET /api/technicians/all` - Listar técnicos
+- `POST /api/technicians/create` - Crear técnico
 
-#### Tabla: `usuarios`
-```sql
-- id_usuario (BIGINT, AUTO)
-- email_usuario (VARCHAR, UNIQUE)
-- password_usuario (VARCHAR, BCrypt)
-- name_usuario (VARCHAR)
-- role_usuario (VARCHAR)
-```
+### Órdenes de Trabajo
+- `GET /api/orders/all?status=&zona=` - Listar órdenes (con filtros)
+- `GET /api/orders/{id}` - Obtener orden específica
+- `POST /api/orders/create` - Crear orden
+- `PUT /api/orders/update/{id}` - Actualizar orden
+- `DELETE /api/orders/delete/{id}` - Eliminar orden
 
-#### Tabla: `tecnicos`
-```sql
-- id_tecnico (BIGINT, AUTO)
-- name_tecnico (VARCHAR, UNIQUE)
-- zone_tecnico (VARCHAR)
-- workload_tecnico (VARCHAR)
-- speciality_tecnico (VARCHAR)
-```
+### Asignaciones
+- `POST /api/assignments/manual` - Asignación manual
+- `POST /api/assignments/automatic` - Asignación automática
 
-### Usuario de Prueba (Pre-cargado)
+### Reportes
+- `GET /api/reports/technician-metrics` - Obtener métricas
+- `POST /api/reports/save` - Guardar reporte
+- `GET /api/reports/history` - Historial de reportes
+- `GET /api/reports/history/{id}` - Detalle de reporte
+- `DELETE /api/reports/history/{id}` - Eliminar reporte
 
-El backend viene con un usuario de prueba:
-- **Email**: `test@example.com`
-- **Password**: `secret` (hasheada con BCrypt)
-- **Role**: `Administrator`
+### Notificaciones
+- `POST /api/notifications/send` - Enviar notificación
 
 ---
 
-## 🔐 Seguridad
+## 🔐 Autenticación
 
-### Frontend
-- Almacena token simulado en `localStorage`
-- Valida rol de usuario (solo supervisores/admins)
-- Implementa bloqueo tras 3 intentos fallidos (mock)
+### Flujo de Autenticación
 
-### Backend
-- Usa BCrypt para hashear contraseñas
-- Spring Security configurado con CORS habilitado
-- Endpoints de autenticación públicos
-- Validación de entrada con `@Valid`
+1. **Login:**
+   ```typescript
+   const response = await apiService.login({
+     email: 'test@example.com',
+     password: 'secret'
+   });
+   // response.token contiene el JWT
+   ```
+
+2. **Almacenamiento:**
+   - Token guardado en `localStorage` como `auth_token`
+
+3. **Uso:**
+   - Todas las peticiones incluyen: `Authorization: Bearer <token>`
+
+4. **Logout:**
+   ```typescript
+   await apiService.logout();
+   // Limpia el token de localStorage
+   ```
+
+---
+
+## 🎨 Componentes Principales
+
+### Páginas
+- **Dashboard** - Vista principal con resumen
+- **ReportsPanel** - Generación y gestión de reportes
+- **AdminPanel** - Registro de técnicos
+
+### Componentes
+- **WorkOrdersList** - Lista de órdenes de trabajo
+- **TechniciansList** - Lista de técnicos
+- **ManualAssignment** - Asignación manual
+- **AutomaticAssignment** - Asignación automática
+
+---
+
+## 🛠 Configuración
+
+### Variables de Entorno (.env)
+
+```bash
+# URL del backend
+VITE_API_URL=http://localhost:8080/api
+
+# Usar API mock (false para producción)
+VITE_USE_MOCK_API=false
+```
+
+### Dependencias Principales
+
+```json
+{
+  "react": "^18.3.1",
+  "react-router-dom": "^7.1.1",
+  "typescript": "~5.6.2",
+  "tailwindcss": "^3.4.17",
+  "recharts": "^2.15.0",
+  "lucide-react": "^0.469.0"
+}
+```
 
 ---
 
 ## 🐛 Solución de Problemas
 
-### Error: "CORS policy"
+### Error de CORS
 
-**Problema**: El frontend no puede conectar con el backend
+**Síntoma:** `Access to fetch at 'http://localhost:8080/api/...' has been blocked by CORS policy`
 
-**Solución**: 
-1. Verifica que el backend esté corriendo en `http://localhost:8080`
-2. El backend ya tiene CORS configurado en `SecurityConfig.java`
+**Solución:**
+1. Verificar que el backend esté corriendo
+2. Verificar configuración CORS en `SecurityConfig.java`
+3. Asegurar que el puerto del frontend esté permitido
 
-### Error: "Invalid email or password"
+### Error 403 Forbidden
 
-**Problema**: Credenciales incorrectas
+**Síntoma:** Todas las peticiones devuelven 403
 
-**Solución**:
-1. Con mock: usa `supervisor_test@telconova.com` / `password123`
-2. Con backend: usa `test@example.com` / `secret`
+**Solución:**
+1. Borrar `localStorage` del navegador
+2. Hacer logout y login nuevamente
+3. Verificar que el token JWT sea válido
 
-### Error: "Network request failed"
+### Datos No Se Muestran
 
-**Problema**: El backend no está corriendo
+**Síntoma:** Componentes vacíos o "undefined"
 
-**Solución**:
-1. Inicia el backend: `mvn spring-boot:run`
-2. O cambia a modo mock: `VITE_USE_MOCK_API=true`
+**Solución:**
+1. Abrir DevTools → Network
+2. Verificar que las respuestas del backend tengan status 200
+3. Verificar que los nombres de campos coincidan (deben estar en español)
 
----
+### Frontend No Se Conecta
 
-## 📝 Configuración de Variables de Entorno
+**Síntoma:** `ERR_CONNECTION_REFUSED`
 
-### Desarrollo
-```bash
-VITE_API_URL=http://localhost:8080/api
-VITE_USE_MOCK_API=true  # Cambiar a false para backend real
-```
-
-### Producción
-```bash
-VITE_API_URL=https://api.tudominio.com/api
-VITE_USE_MOCK_API=false
-```
+**Solución:**
+1. Verificar que el backend esté corriendo en puerto 8080
+2. Verificar `VITE_API_URL` en `.env`
+3. Reiniciar el frontend
 
 ---
 
-## 🎯 Próximos Pasos
+## 📝 Notas Importantes
 
-Para implementar las funcionalidades faltantes en el backend:
+### Consistencia de Nombres
+- **TODO el sistema usa nombres en ESPAÑOL**
+- Backend envía: `nombreCliente`, `zona`, `servicio`, etc.
+- Frontend usa los mismos nombres directamente
+- No hay mapeo entre inglés y español
 
-1. **Órdenes de Trabajo**
-   ```java
-   @Entity
-   class WorkOrder {
-       @Id private Long id;
-       private String clientName;
-       private String address;
-       // ... más campos
-   }
-   ```
+### Parseo de JSON
+- Los reportes guardados tienen `filtros`, `metricas`, `resumen` como strings JSON
+- `api.ts` los parsea automáticamente a objetos
+- Esto es transparente para los componentes
 
-2. **Asignaciones**
-   ```java
-   @PostMapping("/assignments/manual")
-   public WorkOrder assignManually(@RequestBody AssignmentRequest request) {
-       // Lógica de asignación manual
-   }
-   ```
-
-3. **Notificaciones**
-   ```java
-   @PostMapping("/notifications/send")
-   public void sendNotification(@RequestBody NotificationRequest request) {
-       // Lógica de envío de notificaciones
-   }
-   ```
+### Autenticación JWT
+- El token se envía en TODAS las peticiones (excepto login/register)
+- Si el token expira, el usuario debe hacer login nuevamente
+- El backend valida el token en cada request
 
 ---
 
-## 📚 Documentación Adicional
+## 🚀 Próximos Pasos
 
-- **Backend API**: Ver `Backend.pdf` con la estructura completa
-- **Especificaciones**: Ver `INTEGRATION.md` para detalles de endpoints
-- **Frontend**: Este proyecto usa React + TypeScript + Vite
+### Mejoras Sugeridas
+1. Implementar refresh tokens
+2. Agregar manejo de errores más robusto
+3. Implementar tests unitarios
+4. Agregar loading states mejorados
+5. Implementar paginación en órdenes
 
----
-
-## 🤝 Soporte
-
-Para problemas con:
-- **Frontend**: Revisa este archivo y `src/lib/api.ts`
-- **Backend**: Revisa `Backend.pdf` y los archivos Java
-- **Integración**: Compara peticiones en DevTools Network tab
-
----
-
-## ✅ Checklist de Integración
-
-- [ ] Backend corriendo en `http://localhost:8080`
-- [ ] Frontend corriendo en `http://localhost:5173`
-- [ ] Archivo `.env` configurado correctamente
-- [ ] Usuario de prueba disponible en BD
-- [ ] Login funciona correctamente
-- [ ] Lista de técnicos se carga desde backend
-- [ ] Creación de técnicos funciona
+### Funcionalidades Adicionales
+1. Búsqueda avanzada de órdenes
+2. Edición de órdenes existentes
+3. Historial de cambios
+4. Notificaciones en tiempo real
+5. Dashboard con más métricas
 
 ---
 
-**Última actualización**: 2025-01-27
-**Versión Frontend**: 1.0.0
-**Versión Backend**: Spring Boot 3.5.6
+## 📞 Soporte
+
+Para preguntas sobre la integración, consultar:
+- [Backend README](../BackendFabrica/README.md)
+- [Endpoints de Reportes](./ENDPOINTS_REPORTES.md)
+- [Walkthrough de Integración](../.gemini/antigravity/brain/9490a906-e276-4b86-b391-1537ec4d01f7/walkthrough_sesion_final.md)
+
+---
+
+## 📄 Licencia
+
+Proyecto privado - TelcoNova © 2024

@@ -49,9 +49,9 @@ const WorkOrdersList = ({ orders, onRefresh }: WorkOrdersListProps) => {
               Todas las órdenes del sistema ({orders.length} total)
             </CardDescription>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={onRefresh}
             aria-label="Actualizar lista de órdenes de trabajo"
           >
@@ -72,14 +72,14 @@ const WorkOrdersList = ({ orders, onRefresh }: WorkOrdersListProps) => {
                 key={order.id}
                 className="p-4 border rounded-lg hover:shadow-soft transition-all"
                 role="listitem"
-                aria-label={`Orden de trabajo para ${order.clientName}, estado ${getStatusLabel(order.status)}, prioridad ${order.priority}`}
+                aria-label={`Orden de trabajo para ${order.nombreCliente || 'Sin cliente'}, estado ${getStatusLabel(order.status)}, prioridad ${order.prioridad || 'media'}`}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold">{order.clientName}</h3>
-                      <Badge className={getPriorityColor(order.priority)}>
-                        {order.priority}
+                      <h3 className="font-semibold">{order.nombreCliente || 'Sin cliente'}</h3>
+                      <Badge className={getPriorityColor(order.prioridad || 'media')}>
+                        {order.prioridad || 'media'}
                       </Badge>
                       <Badge className={getStatusColor(order.status)}>
                         {getStatusLabel(order.status)}
@@ -87,7 +87,7 @@ const WorkOrdersList = ({ orders, onRefresh }: WorkOrdersListProps) => {
                     </div>
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
-                      {order.address}
+                      {order.direccion || 'Sin dirección'}
                     </p>
                   </div>
                 </div>
@@ -95,32 +95,32 @@ const WorkOrdersList = ({ orders, onRefresh }: WorkOrdersListProps) => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
                   <div className="text-sm">
                     <p className="text-muted-foreground text-xs">Especialidad</p>
-                    <p className="font-medium">{order.specialty}</p>
+                    <p className="font-medium">{order.servicio}</p>
                   </div>
                   <div className="text-sm">
                     <p className="text-muted-foreground text-xs">Zona</p>
-                    <p className="font-medium">{order.zone}</p>
+                    <p className="font-medium">{order.zona}</p>
                   </div>
                   <div className="text-sm">
                     <p className="text-muted-foreground text-xs">Fecha creación</p>
                     <p className="font-medium flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      {new Date(order.createdAt).toLocaleDateString()}
+                      {new Date(order.creadoEn).toLocaleDateString()}
                     </p>
                   </div>
-                  {order.assignedTechnicianId && (
+                  {order.assignedTo && (
                     <div className="text-sm">
                       <p className="text-muted-foreground text-xs">Asignado por</p>
                       <p className="font-medium flex items-center gap-1">
                         <User className="h-3 w-3" />
-                        {order.assignedBy || 'Sistema'}
+                        {order.asignadoPor || 'Sistema'}
                       </p>
                     </div>
                   )}
                 </div>
 
                 <p className="text-sm text-muted-foreground line-clamp-2">
-                  {order.description}
+                  {order.descripcion}
                 </p>
               </div>
             ))}

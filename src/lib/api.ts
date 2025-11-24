@@ -37,6 +37,7 @@ export interface Technician {
   zoneTecnico: string;
   workloadTecnico: string;
   specialtyTecnico: string;
+  emailTecnico?: string;
   // Frontend compatibility fields
   id?: string;
   name?: string;
@@ -51,29 +52,29 @@ export interface Technician {
 
 export interface WorkOrder {
   id: string;
-  clientName: string;
-  address: string;
-  zone: string;
-  priority: 'high' | 'medium' | 'low';
-  specialty: string;
-  description: string;
+  nombreCliente?: string;
+  direccion?: string;
+  zona: string;
+  prioridad?: 'alta' | 'media' | 'baja';
+  servicio: string;
+  descripcion: string;
   status: 'pending' | 'assigned' | 'in_progress' | 'completed';
-  assignedTechnicianId?: string;
-  assignedAt?: string;
-  assignedBy?: string;
-  createdAt: string;
+  assignedTo?: string;
+  asignadoEn?: string;
+  asignadoPor?: string;
+  creadoEn: string;
 }
 
 export interface AssignmentRequest {
-  orderId: string;
-  technicianId?: string;
-  automatic?: boolean;
+  idOrden: string;
+  idTecnico?: string;
+  automatico?: boolean;
 }
 
 export interface NotificationData {
-  orderId: string;
-  technicianId: string;
-  channels: ('email' | 'sms')[];
+  idOrden: string;
+  idTecnico: string;
+  canales: ('email' | 'sms')[];
 }
 
 export interface TechnicianRegistration {
@@ -85,15 +86,15 @@ export interface TechnicianRegistration {
 
 // Report interfaces
 export interface SavedReport {
-  reportId: string;
-  reportName: string;
-  filters: {
+  idReporte: string;
+  nombreReporte: string;
+  filtros: {
     startDate: string;
     endDate: string;
     serviceType: string;
     zone: string;
   };
-  metrics: Array<{
+  metricas: Array<{
     technicianId: string;
     technicianName: string;
     zone: string;
@@ -103,22 +104,22 @@ export interface SavedReport {
     inProgressOrders: number;
     avgResolutionTime: number;
   }>;
-  summary: {
+  resumen: {
     totalOrders: number;
     totalCompleted: number;
     totalInProgress: number;
     avgResolutionTime: number;
   };
-  createdAt: string;
-  createdBy: string;
-  createdByName?: string;
+  creadoEn: string;
+  creadoPor: string;
+  creadoPorNombre?: string;
 }
 
 export interface SaveReportRequest {
-  reportName: string;
-  filters: SavedReport['filters'];
-  metrics: SavedReport['metrics'];
-  summary: SavedReport['summary'];
+  nombreReporte: string;
+  filtros: SavedReport['filtros'];
+  metricas: SavedReport['metricas'];
+  resumen: SavedReport['resumen'];
 }
 
 class ApiService {
@@ -176,23 +177,22 @@ class ApiService {
     if (USE_MOCK_API) {
       return mockApiService.login(credentials);
     }
-    
-    const response = await this.request<string>('/auth/login', {
+
+    const response = await this.request<{ token: string; tokenType: string; email: string }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
-    
-    // Backend solo devuelve un mensaje, no hay token real
-    // Crear token simulado para compatibilidad con frontend
-    const simulatedToken = btoa(`${credentials.email}:${Date.now()}`);
-    this.setToken(simulatedToken);
-    
+
+    // Use the real JWT token from backend
+    const token = response.token;
+    this.setToken(token);
+
     return {
-      message: response,
-      token: simulatedToken,
+      message: 'Login successful',
+      token: token,
       user: {
-        id: credentials.email,
-        username: credentials.email,
+        id: response.email,
+        username: response.email,
         role: 'supervisor'
       }
     };
@@ -202,12 +202,12 @@ class ApiService {
     if (USE_MOCK_API) {
       return mockApiService.register(credentials);
     }
-    
+
     const response = await this.request<string>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
-    
+
     return {
       message: response
     };
@@ -229,9 +229,9 @@ class ApiService {
     if (USE_MOCK_API) {
       return mockApiService.getTechnicians(filters);
     }
-    
+
     const technicians = await this.request<Technician[]>('/technicians/all');
-    
+
     // Transform backend format to frontend format and apply filters
     return technicians
       .map(tech => ({
@@ -242,7 +242,7 @@ class ApiService {
         specialty: tech.specialtyTecnico,
         currentLoad: parseInt(tech.workloadTecnico) || 0,
         availability: parseInt(tech.workloadTecnico) > 5 ? 'busy' as const : 'available' as const,
-        email: `${tech.nameTecnico.toLowerCase().replace(/\s+/g, '.')}@telconova.com`,
+        email: tech.emailTecnico || `${tech.nameTecnico.toLowerCase().replace(/\s+/g, '.')}@telconova.com`,
         phone: '+1234567890',
         certifications: []
       }))
@@ -264,24 +264,24 @@ class ApiService {
   // Work orders endpoints
   async getWorkOrders(filters?: {
     status?: string;
-    zone?: string;
+    zona?: string;
   }): Promise<WorkOrder[]> {
     if (USE_MOCK_API) {
       return mockApiService.getWorkOrders(filters);
     }
     const params = new URLSearchParams();
     if (filters?.status) params.append('status', filters.status);
-    if (filters?.zone) params.append('zone', filters.zone);
+    if (filters?.zona) params.append('zona', filters.zona);
 
     const query = params.toString() ? `?${params.toString()}` : '';
-    return this.request<WorkOrder[]>(`/work-orders${query}`);
+    return this.request<WorkOrder[]>(`/orders/all${query}`);
   }
 
   async getWorkOrder(id: string): Promise<WorkOrder> {
     if (USE_MOCK_API) {
       return mockApiService.getWorkOrder(id);
     }
-    return this.request<WorkOrder>(`/work-orders/${id}`);
+    return this.request<WorkOrder>(`/orders/${id}`);
   }
 
   // Assignment endpoints
@@ -301,7 +301,7 @@ class ApiService {
     }
     return this.request<WorkOrder>('/assignments/automatic', {
       method: 'POST',
-      body: JSON.stringify({ orderId }),
+      body: JSON.stringify({ idOrden: orderId }),
     });
   }
 
@@ -321,12 +321,12 @@ class ApiService {
     if (USE_MOCK_API) {
       return mockApiService.registerTechnician(data);
     }
-    
+
     const response = await this.request<string>('/technicians/create', {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    
+
     return {
       message: response
     };
@@ -337,29 +337,54 @@ class ApiService {
     if (USE_MOCK_API) {
       return mockApiService.saveReport(data);
     }
-    
+
     const response = await this.request<{ data: SavedReport }>('/reports/save', {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    
-    return response.data;
+
+    // Parse JSON strings if needed
+    const report = response.data;
+    if (typeof report.filtros === 'string') {
+      report.filtros = JSON.parse(report.filtros);
+    }
+    if (typeof report.metricas === 'string') {
+      report.metricas = JSON.parse(report.metricas);
+    }
+    if (typeof report.resumen === 'string') {
+      report.resumen = JSON.parse(report.resumen);
+    }
+
+    return report;
   }
 
   async getReportHistory(
-    page = 1, 
+    page = 1,
     limit = 10,
-    sortBy = 'createdAt',
+    sortBy = 'creadoEn',
     sortOrder: 'asc' | 'desc' = 'desc'
   ): Promise<{ reports: SavedReport[]; pagination: any }> {
     if (USE_MOCK_API) {
       return mockApiService.getReportHistory(page, limit, sortBy, sortOrder);
     }
-    
+
     const response = await this.request<{ data: { reports: SavedReport[]; pagination: any } }>(
       `/reports/history?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`
     );
-    
+
+    // Parse JSON strings in each report
+    response.data.reports.forEach(report => {
+      if (typeof report.filtros === 'string') {
+        report.filtros = JSON.parse(report.filtros);
+      }
+      if (typeof report.metricas === 'string') {
+        report.metricas = JSON.parse(report.metricas);
+      }
+      if (typeof report.resumen === 'string') {
+        report.resumen = JSON.parse(report.resumen);
+      }
+    });
+
     return response.data;
   }
 
@@ -367,16 +392,29 @@ class ApiService {
     if (USE_MOCK_API) {
       return mockApiService.getReportDetail(reportId);
     }
-    
+
     const response = await this.request<{ data: SavedReport }>(`/reports/history/${reportId}`);
-    return response.data;
+
+    // Parse JSON strings if needed
+    const report = response.data;
+    if (typeof report.filtros === 'string') {
+      report.filtros = JSON.parse(report.filtros);
+    }
+    if (typeof report.metricas === 'string') {
+      report.metricas = JSON.parse(report.metricas);
+    }
+    if (typeof report.resumen === 'string') {
+      report.resumen = JSON.parse(report.resumen);
+    }
+
+    return report;
   }
 
   async deleteReport(reportId: string): Promise<void> {
     if (USE_MOCK_API) {
       return mockApiService.deleteReport(reportId);
     }
-    
+
     await this.request(`/reports/history/${reportId}`, {
       method: 'DELETE',
     });

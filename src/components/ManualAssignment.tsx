@@ -26,11 +26,11 @@ const ManualAssignment = ({ orders, technicians, onAssignment }: ManualAssignmen
 
   const filteredTechnicians = technicians.filter((tech) => {
     const matchesSearch = tech.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tech.email.toLowerCase().includes(searchTerm.toLowerCase());
+      tech.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesZone = zoneFilter === "all" || tech.zone === zoneFilter;
     const matchesSpecialty = specialtyFilter === "all" || tech.specialty === specialtyFilter;
     const matchesAvailability = availabilityFilter === "all" || tech.availability === availabilityFilter;
-    
+
     return matchesSearch && matchesZone && matchesSpecialty && matchesAvailability;
   });
 
@@ -50,8 +50,8 @@ const ManualAssignment = ({ orders, technicians, onAssignment }: ManualAssignmen
     setLoading(true);
     try {
       const assignedOrder = await apiService.assignManually({
-        orderId: selectedOrder,
-        technicianId: selectedTechnician,
+        idOrden: selectedOrder,
+        idTecnico: selectedTechnician,
       });
 
       const order = orders.find(o => o.id === selectedOrder);
@@ -60,9 +60,9 @@ const ManualAssignment = ({ orders, technicians, onAssignment }: ManualAssignmen
       // Enviar notificación automática por email al técnico
       try {
         await apiService.sendNotification({
-          orderId: selectedOrder,
-          technicianId: selectedTechnician,
-          channels: ['email'],
+          idOrden: selectedOrder,
+          idTecnico: selectedTechnician,
+          canales: ['email'],
         });
 
         toast({
@@ -130,28 +130,27 @@ const ManualAssignment = ({ orders, technicians, onAssignment }: ManualAssignmen
                 {orders.map((order) => (
                   <div
                     key={order.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                      selectedOrder === order.id
+                    className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedOrder === order.id
                         ? 'border-primary bg-secondary'
                         : 'border-border hover:border-primary/50'
-                    }`}
+                      }`}
                     onClick={() => setSelectedOrder(order.id)}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <p className="font-semibold">{order.clientName}</p>
+                        <p className="font-semibold">{order.nombreCliente || 'Sin cliente'}</p>
                         <p className="text-sm text-muted-foreground flex items-center gap-1">
                           <MapPin className="h-3 w-3" />
-                          {order.address}
+                          {order.direccion || 'Sin dirección'}
                         </p>
                       </div>
-                      <Badge className={getPriorityColor(order.priority)}>
-                        {order.priority}
+                      <Badge className={getPriorityColor(order.prioridad || 'media')}>
+                        {order.prioridad || 'media'}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      <Badge variant="outline">{order.specialty}</Badge>
-                      <Badge variant="outline">{order.zone}</Badge>
+                      <Badge variant="outline">{order.servicio}</Badge>
+                      <Badge variant="outline">{order.zona}</Badge>
                     </div>
                   </div>
                 ))}
@@ -232,11 +231,10 @@ const ManualAssignment = ({ orders, technicians, onAssignment }: ManualAssignmen
                 filteredTechnicians.map((tech) => (
                   <div
                     key={tech.id}
-                    className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                      selectedTechnician === tech.id
+                    className={`p-3 border rounded-lg cursor-pointer transition-all ${selectedTechnician === tech.id
                         ? 'border-primary bg-secondary'
                         : 'border-border hover:border-primary/50'
-                    }`}
+                      }`}
                     onClick={() => setSelectedTechnician(tech.id)}
                   >
                     <div className="flex items-start justify-between mb-2">
@@ -274,8 +272,8 @@ const ManualAssignment = ({ orders, technicians, onAssignment }: ManualAssignmen
             </div>
 
             {/* Assign Button */}
-            <Button 
-              onClick={handleAssign} 
+            <Button
+              onClick={handleAssign}
               disabled={!selectedOrder || !selectedTechnician || loading}
               className="w-full"
             >

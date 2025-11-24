@@ -32,12 +32,12 @@ const AutomaticAssignment = ({ orders, onAssignment }: AutomaticAssignmentProps)
       const result = await apiService.assignAutomatically(selectedOrder);
 
       // Enviar notificación automática por email al técnico asignado
-      if (result.assignedTechnicianId) {
+      if (result.assignedTo) {
         try {
           await apiService.sendNotification({
-            orderId: selectedOrder,
-            technicianId: result.assignedTechnicianId,
-            channels: ['email'],
+            idOrden: selectedOrder,
+            idTecnico: result.assignedTo,
+            canales: ['email'],
           });
 
           toast({
@@ -124,46 +124,45 @@ const AutomaticAssignment = ({ orders, onAssignment }: AutomaticAssignmentProps)
                   {orders.map((order) => (
                     <div
                       key={order.id}
-                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                        selectedOrder === order.id
+                      className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedOrder === order.id
                           ? 'border-primary bg-secondary shadow-medium'
                           : 'border-border hover:border-primary/50 hover:shadow-soft'
-                      }`}
+                        }`}
                       onClick={() => setSelectedOrder(order.id)}
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <p className="font-semibold text-lg">{order.clientName}</p>
-                            <Badge className={getPriorityColor(order.priority)}>
-                              {order.priority}
+                            <p className="font-semibold text-lg">{order.nombreCliente || 'Sin cliente'}</p>
+                            <Badge className={getPriorityColor(order.prioridad || 'media')}>
+                              {order.prioridad || 'media'}
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
-                            {order.address}
+                            {order.direccion || 'Sin dirección'}
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-2 mb-2">
                         <Badge variant="outline" className="text-xs">
-                          {order.specialty}
+                          {order.servicio}
                         </Badge>
                         <Badge variant="outline" className="text-xs">
-                          {order.zone}
+                          {order.zona}
                         </Badge>
                       </div>
 
                       <p className="text-sm text-muted-foreground line-clamp-2">
-                        {order.description}
+                        {order.descripcion}
                       </p>
                     </div>
                   ))}
                 </div>
 
-                <Button 
-                  onClick={handleAutoAssign} 
+                <Button
+                  onClick={handleAutoAssign}
                   disabled={!selectedOrder || loading}
                   className="w-full"
                   size="lg"
