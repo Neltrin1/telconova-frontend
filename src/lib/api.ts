@@ -178,7 +178,7 @@ class ApiService {
       return mockApiService.login(credentials);
     }
 
-    const response = await this.request<{ token: string; tokenType: string; email: string }>('/auth/login', {
+    const response = await this.request<{ token: string; tokenType: string; email: string }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
