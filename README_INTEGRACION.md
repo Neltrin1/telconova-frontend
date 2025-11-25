@@ -4,36 +4,6 @@
 
 Frontend React + TypeScript integrado completamente con el backend Spring Boot.
 
----
-
-## 🚀 Inicio Rápido
-
-### Conectar con Backend
-
-1. **Inicia el backend** de Spring Boot en `http://localhost:8080`
-
-2. **Configura el archivo `.env`:**
-```bash
-VITE_API_URL=http://localhost:8080/api
-VITE_USE_MOCK_API=false
-```
-
-3. **Ejecuta el frontend:**
-```bash
-npm install
-npm run dev
-```
-
-4. **Accede a la aplicación:**
-   - URL: `http://localhost:8081` (o el puerto que Vite asigne)
-   - **Email**: `test@example.com`
-   - **Password**: `secret`
-
----
-
-## ✅ Estado de la Integración
-
-### Completamente Implementado
 
 #### Autenticación ✅
 - Login con JWT

@@ -29,7 +29,9 @@ Los endpoints de reportes permiten:
 - ✅ Consultar historial con paginación
 - ✅ Eliminar reportes antiguos
 
-**Base URL:** `http://localhost:8080/api/reports`
+**Base URL:**
+- **Desarrollo:** `http://localhost:8080/api/reports`
+- **Producción:** `https://telconova-backend.onrender.com/api/reports`
 
 ---
 

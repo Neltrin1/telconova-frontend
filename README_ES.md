@@ -65,7 +65,13 @@ npm run dev
 ### Variables de Entorno
 
 ```env
-VITE_API_URL=http://localhost:8000/api
+# Desarrollo
+VITE_API_URL=http://localhost:8080
+VITE_USE_MOCK_API=false
+
+# Producción
+VITE_API_URL=https://telconova-backend.onrender.com
+VITE_USE_MOCK_API=false
 ```
 
 ### Integración con Backend
@@ -188,11 +194,10 @@ npm run build
 npm run preview
 ```
 
-El proyecto puede desplegarse en:
-- Vercel (recomendado)
-- Netlify
-- AWS Amplify
-- Cualquier hosting de SPA
+El proyecto está desplegado en:
+- **Producción:** https://telconova-frontend.vercel.app
+- **Plataforma:** Vercel
+- **Backend:** https://telconova-backend.onrender.com
 
 ## 📚 Documentación Adicional
 
