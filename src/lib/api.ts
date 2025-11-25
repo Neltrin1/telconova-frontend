@@ -289,7 +289,7 @@ class ApiService {
     if (USE_MOCK_API) {
       return mockApiService.assignManually(data);
     }
-    return this.request<WorkOrder>('/assignments/manual', {
+    return this.request<WorkOrder>('/api/assignments/manual', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -299,7 +299,7 @@ class ApiService {
     if (USE_MOCK_API) {
       return mockApiService.assignAutomatically(orderId);
     }
-    return this.request<WorkOrder>('/assignments/automatic', {
+    return this.request<WorkOrder>('/api/assignments/automatic', {
       method: 'POST',
       body: JSON.stringify({ idOrden: orderId }),
     });
@@ -310,7 +310,7 @@ class ApiService {
     if (USE_MOCK_API) {
       return mockApiService.sendNotification(data);
     }
-    await this.request('/notifications/send', {
+    await this.request('/api/notifications/send', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -322,7 +322,7 @@ class ApiService {
       return mockApiService.registerTechnician(data);
     }
 
-    const response = await this.request<string>('/technicians/create', {
+    const response = await this.request<string>('/api/technicians/create', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -338,7 +338,7 @@ class ApiService {
       return mockApiService.saveReport(data);
     }
 
-    const response = await this.request<{ data: SavedReport }>('/reports/save', {
+    const response = await this.request<{ data: SavedReport }>('/api/reports/save', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -369,7 +369,7 @@ class ApiService {
     }
 
     const response = await this.request<{ data: { reports: SavedReport[]; pagination: any } }>(
-      `/reports/history?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`
+      `/api/reports/history?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`
     );
 
     // Parse JSON strings in each report
@@ -393,7 +393,7 @@ class ApiService {
       return mockApiService.getReportDetail(reportId);
     }
 
-    const response = await this.request<{ data: SavedReport }>(`/reports/history/${reportId}`);
+    const response = await this.request<{ data: SavedReport }>(`/api/reports/history/${reportId}`);
 
     // Parse JSON strings if needed
     const report = response.data;
@@ -415,7 +415,7 @@ class ApiService {
       return mockApiService.deleteReport(reportId);
     }
 
-    await this.request(`/reports/history/${reportId}`, {
+    await this.request(`/api/reports/history/${reportId}`, {
       method: 'DELETE',
     });
   }
